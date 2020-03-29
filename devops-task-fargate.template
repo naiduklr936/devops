@@ -1,0 +1,1156 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "AWS CloudFormation Template for DevOps Task.",
+    "Metadata": {
+        "AWS::CloudFormation::Interface": {
+            "ParameterGroups": [
+                {
+                    "Label": {
+                        "default": "VPC"
+                    },
+                    "Parameters": [
+                        "Name",
+                        "VpcCidr",
+                        "Environment"
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "Public Subnets"
+                    },
+                    "Parameters": [
+                        "PublicSubnet1Cidr",
+                        "PublicSubnet2Cidr"
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "Private Subnets"
+                    },
+                    "Parameters": [
+                        "PrivateSubnet1Cidr",
+                        "PrivateSubnet2Cidr"
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "Docker Image Info"
+                    },
+                    "Parameters": [
+                        "DockerImage"
+                    ]
+                }
+            ]
+        }
+    },
+    "Parameters": {
+        "Name": {
+            "Description": "Name of Vpc",
+            "Type": "String",
+            "Default": "devops"
+        },
+        "DockerImage": {
+            "Description": "Docker Image",
+            "Type": "String",
+            "Default": "229349022034.dkr.ecr.us-east-1.amazonaws.com/helloapp:ecr-helloapp"
+        },
+        "VpcCidr": {
+            "ConstraintDescription": "Must be a valid IP CIDR range of the form x.x.x.x/x.",
+            "Description": "The CIDR range for your VPC in form x.x.x.x/x",
+            "Type": "String",
+            "Default": "10.0.0.0/16"
+        },
+        "PublicSubnet1Cidr": {
+            "ConstraintDescription": "Must be a valid IP CIDR range of the form x.x.x.x/x.",
+            "Description": "The CIDR range for your Public 1 Subnet in form x.x.x.x/x",
+            "Type": "String",
+            "Default": "10.0.0.0/20"
+        },
+        "PrivateSubnet1Cidr": {
+            "ConstraintDescription": "Must be a valid IP CIDR range of the form x.x.x.x/x.",
+            "Description": "The CIDR range for your Private 1 Subnet in form x.x.x.x/x",
+            "Type": "String",
+            "Default": "10.0.32.0/20"
+        },
+        "PublicSubnet2Cidr": {
+            "ConstraintDescription": "Must be a valid IP CIDR range of the form x.x.x.x/x.",
+            "Description": "The CIDR range for your Public 2 Subnet in form x.x.x.x/x",
+            "Type": "String",
+            "Default": "10.0.16.0/20"
+        },
+        "PrivateSubnet2Cidr": {
+            "ConstraintDescription": "Must be a valid IP CIDR range of the form x.x.x.x/x.",
+            "Description": "The CIDR range for your Private 2 Subnet in form x.x.x.x/x",
+            "Type": "String",
+            "Default": "10.0.48.0/20"
+        },
+        "Environment": {
+            "Description": "Specify the Environment where lambda function is deploying.",
+            "Type": "String",
+            "Default": "devops",
+            "AllowedValues": [
+                "devops"
+            ],
+            "ConstraintDescription": "Must specify devops."
+        }
+    },
+    "Mappings": {
+        "RegionMap": {
+            "us-east-2": {
+                "region": "ue2"
+            },
+            "us-east-1": {
+                "region": "ue1"
+            },
+            "us-west-1": {
+                "region": "uw1"
+            },
+            "us-west-2": {
+                "region": "uw2"
+            },
+            "ap-northeast-1": {
+                "region": "an1"
+            },
+            "ap-northeast-2": {
+                "region": "an2"
+            },
+            "ap-northeast-3": {
+                "region": "an3"
+            },
+            "ap-south-1": {
+                "region": "as1"
+            },
+            "ap-southeast-1": {
+                "region": "ae1"
+            },
+            "ap-southeast-2": {
+                "region": "ae2"
+            },
+            "ca-central-1": {
+                "region": "cc1"
+            },
+            "cn-north-1": {
+                "region": "cn1"
+            },
+            "cn-northwest-1": {
+                "region": "cw1"
+            },
+            "eu-central-1": {
+                "region": "ec1"
+            },
+            "eu-west-1": {
+                "region": "ew1"
+            },
+            "eu-west-2": {
+                "region": "ew2"
+            },
+            "eu-west-3": {
+                "region": "ew3"
+            },
+            "sa-east-1": {
+                "region": "se1"
+            }
+        }
+    },
+    "Resources": {
+        "Vpc": {
+            "Properties": {
+                "CidrBlock": {
+                    "Ref": "VpcCidr"
+                },
+                "EnableDnsHostnames": "true",
+                "EnableDnsSupport": "true",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "-",
+                                [
+                                    {
+                                        "Ref": "Name"
+                                    },
+                                    {
+                                        "Ref": "Environment"
+                                    },
+                                    {
+                                        "Fn::FindInMap": [
+                                            "RegionMap",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "region"
+                                        ]
+                                    },
+                                    "vpc"
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            },
+            "Type": "AWS::EC2::VPC"
+        },
+        "InternetGateway": {
+            "DependsOn": "Vpc",
+            "Properties": {
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "-",
+                                [
+                                    {
+                                        "Ref": "Name"
+                                    },
+                                    {
+                                        "Ref": "Environment"
+                                    },
+                                    {
+                                        "Fn::FindInMap": [
+                                            "RegionMap",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "region"
+                                        ]
+                                    },
+                                    "vpc-igw"
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            },
+            "Type": "AWS::EC2::InternetGateway"
+        },
+        "AttachGateway": {
+            "DependsOn": [
+                "Vpc",
+                "InternetGateway"
+            ],
+            "Properties": {
+                "InternetGatewayId": {
+                    "Ref": "InternetGateway"
+                },
+                "VpcId": {
+                    "Ref": "Vpc"
+                }
+            },
+            "Type": "AWS::EC2::VPCGatewayAttachment"
+        },
+        "RouteViaIgw": {
+            "DependsOn": "Vpc",
+            "Properties": {
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "-",
+                                [
+                                    {
+                                        "Ref": "Name"
+                                    },
+                                    {
+                                        "Ref": "Environment"
+                                    },
+                                    {
+                                        "Fn::FindInMap": [
+                                            "RegionMap",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "region"
+                                        ]
+                                    },
+                                    "vpc-public-rt-1"
+                                ]
+                            ]
+                        }
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "Vpc"
+                }
+            },
+            "Type": "AWS::EC2::RouteTable"
+        },
+        "PublicRouteViaIgw": {
+            "DependsOn": [
+                "AttachGateway",
+                "RouteViaIgw"
+            ],
+            "Properties": {
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "GatewayId": {
+                    "Ref": "InternetGateway"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteViaIgw"
+                }
+            },
+            "Type": "AWS::EC2::Route"
+        },
+        "PublicSubnet1": {
+            "DependsOn": "Vpc",
+            "Properties": {
+                "AvailabilityZone": {
+                    "Fn::Select": [
+                        "0",
+                        {
+                            "Fn::GetAZs": ""
+                        }
+                    ]
+                },
+                "CidrBlock": {
+                    "Ref": "PublicSubnet1Cidr"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "-",
+                                [
+                                    {
+                                        "Ref": "Name"
+                                    },
+                                    {
+                                        "Ref": "Environment"
+                                    },
+                                    {
+                                        "Fn::FindInMap": [
+                                            "RegionMap",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "region"
+                                        ]
+                                    },
+                                    "vpc-publicsubnet-1"
+                                ]
+                            ]
+                        }
+                    },
+                    {
+                        "Key": "Tier",
+                        "Value": "Public"
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "Vpc"
+                }
+            },
+            "Type": "AWS::EC2::Subnet"
+        },
+        "PrivateSubnet1": {
+            "DependsOn": "Vpc",
+            "Properties": {
+                "AvailabilityZone": {
+                    "Fn::Select": [
+                        "0",
+                        {
+                            "Fn::GetAZs": ""
+                        }
+                    ]
+                },
+                "CidrBlock": {
+                    "Ref": "PrivateSubnet1Cidr"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "-",
+                                [
+                                    {
+                                        "Ref": "Name"
+                                    },
+                                    {
+                                        "Ref": "Environment"
+                                    },
+                                    {
+                                        "Fn::FindInMap": [
+                                            "RegionMap",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "region"
+                                        ]
+                                    },
+                                    "vpc-privatesubnet-1"
+                                ]
+                            ]
+                        }
+                    },
+                    {
+                        "Key": "Tier",
+                        "Value": "Private"
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "Vpc"
+                }
+            },
+            "Type": "AWS::EC2::Subnet"
+        },
+        "PublicSubnet2": {
+            "DependsOn": "Vpc",
+            "Properties": {
+                "AvailabilityZone": {
+                    "Fn::Select": [
+                        "1",
+                        {
+                            "Fn::GetAZs": ""
+                        }
+                    ]
+                },
+                "CidrBlock": {
+                    "Ref": "PublicSubnet2Cidr"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "-",
+                                [
+                                    {
+                                        "Ref": "Name"
+                                    },
+                                    {
+                                        "Ref": "Environment"
+                                    },
+                                    {
+                                        "Fn::FindInMap": [
+                                            "RegionMap",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "region"
+                                        ]
+                                    },
+                                    "vpc-publicsubnet-2"
+                                ]
+                            ]
+                        }
+                    },
+                    {
+                        "Key": "Tier",
+                        "Value": "Public"
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "Vpc"
+                }
+            },
+            "Type": "AWS::EC2::Subnet"
+        },
+        "PrivateSubnet2": {
+            "DependsOn": "Vpc",
+            "Properties": {
+                "AvailabilityZone": {
+                    "Fn::Select": [
+                        "1",
+                        {
+                            "Fn::GetAZs": ""
+                        }
+                    ]
+                },
+                "CidrBlock": {
+                    "Ref": "PrivateSubnet2Cidr"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "-",
+                                [
+                                    {
+                                        "Ref": "Name"
+                                    },
+                                    {
+                                        "Ref": "Environment"
+                                    },
+                                    {
+                                        "Fn::FindInMap": [
+                                            "RegionMap",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "region"
+                                        ]
+                                    },
+                                    "vpc-privatesubnet-2"
+                                ]
+                            ]
+                        }
+                    },
+                    {
+                        "Key": "Tier",
+                        "Value": "Private"
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "Vpc"
+                }
+            },
+            "Type": "AWS::EC2::Subnet"
+        },
+        "PublicSubnet1RouteTableAssociation": {
+            "DependsOn": [
+                "PublicSubnet1",
+                "RouteViaIgw"
+            ],
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "RouteViaIgw"
+                },
+                "SubnetId": {
+                    "Ref": "PublicSubnet1"
+                }
+            },
+            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+        },
+        "PublicSubnet2RouteTableAssociation": {
+            "DependsOn": [
+                "PublicSubnet2",
+                "RouteViaIgw"
+            ],
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "RouteViaIgw"
+                },
+                "SubnetId": {
+                    "Ref": "PublicSubnet2"
+                }
+            },
+            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+        },
+        "NatGateway1": {
+            "DependsOn": [
+                "AttachGateway",
+                "NatGateway1EIP"
+            ],
+            "Type": "AWS::EC2::NatGateway",
+            "Properties": {
+                "AllocationId": {
+                    "Fn::GetAtt": [
+                        "NatGateway1EIP",
+                        "AllocationId"
+                    ]
+                },
+                "SubnetId": {
+                    "Ref": "PublicSubnet1"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "-",
+                                [
+                                    {
+                                        "Ref": "Name"
+                                    },
+                                    {
+                                        "Ref": "Environment"
+                                    },
+                                    {
+                                        "Fn::FindInMap": [
+                                            "RegionMap",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "region"
+                                        ]
+                                    },
+                                    "vpc-natgateway-1"
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "NatGateway1EIP": {
+            "Type": "AWS::EC2::EIP",
+            "Properties": {
+                "Domain": "vpc"
+            }
+        },
+        "NatGateway2": {
+            "DependsOn": [
+                "AttachGateway",
+                "NatGateway2EIP"
+            ],
+            "Type": "AWS::EC2::NatGateway",
+            "Properties": {
+                "AllocationId": {
+                    "Fn::GetAtt": [
+                        "NatGateway2EIP",
+                        "AllocationId"
+                    ]
+                },
+                "SubnetId": {
+                    "Ref": "PublicSubnet2"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "-",
+                                [
+                                    {
+                                        "Ref": "Name"
+                                    },
+                                    {
+                                        "Ref": "Environment"
+                                    },
+                                    {
+                                        "Fn::FindInMap": [
+                                            "RegionMap",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "region"
+                                        ]
+                                    },
+                                    "vpc-natgateway-2"
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "NatGateway2EIP": {
+            "Type": "AWS::EC2::EIP",
+            "Properties": {
+                "Domain": "vpc"
+            }
+        },
+        "RouteViaNAT1": {
+            "DependsOn": "Vpc",
+            "Properties": {
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "-",
+                                [
+                                    {
+                                        "Ref": "Name"
+                                    },
+                                    {
+                                        "Ref": "Environment"
+                                    },
+                                    {
+                                        "Fn::FindInMap": [
+                                            "RegionMap",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "region"
+                                        ]
+                                    },
+                                    "vpc-private-rt-1"
+                                ]
+                            ]
+                        }
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "Vpc"
+                }
+            },
+            "Type": "AWS::EC2::RouteTable"
+        },
+        "PrivateSubnet1RouteViaNAT": {
+            "DependsOn": [
+                "RouteViaNAT1",
+                "NatGateway1"
+            ],
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "RouteViaNAT1"
+                },
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "NatGatewayId": {
+                    "Ref": "NatGateway1"
+                }
+            }
+        },
+        "PrivateSubnet1RouteTableAssociation": {
+            "DependsOn": [
+                "PrivateSubnet1",
+                "PrivateSubnet1RouteViaNAT"
+            ],
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "RouteViaNAT1"
+                },
+                "SubnetId": {
+                    "Ref": "PrivateSubnet1"
+                }
+            },
+            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+        },
+        "RouteViaNAT2": {
+            "DependsOn": "Vpc",
+            "Properties": {
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "-",
+                                [
+                                    {
+                                        "Ref": "Name"
+                                    },
+                                    {
+                                        "Ref": "Environment"
+                                    },
+                                    {
+                                        "Fn::FindInMap": [
+                                            "RegionMap",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "region"
+                                        ]
+                                    },
+                                    "vpc-private-rt-2"
+                                ]
+                            ]
+                        }
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "Vpc"
+                }
+            },
+            "Type": "AWS::EC2::RouteTable"
+        },
+        "PrivateSubnet2RouteViaNAT": {
+            "DependsOn": [
+                "RouteViaNAT2",
+                "NatGateway2"
+            ],
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "RouteViaNAT2"
+                },
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "NatGatewayId": {
+                    "Ref": "NatGateway2"
+                }
+            }
+        },
+        "PrivateSubnet2RouteTableAssociation": {
+            "DependsOn": [
+                "PrivateSubnet2",
+                "PrivateSubnet2RouteViaNAT"
+            ],
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "RouteViaNAT2"
+                },
+                "SubnetId": {
+                    "Ref": "PrivateSubnet2"
+                }
+            },
+            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+        },
+        "SecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Security Group.",
+                "GroupName": "sg",
+                "SecurityGroupIngress": [
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "IpProtocol": -1
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "Vpc"
+                }
+            }
+        },
+        "TargetGroup": {
+            "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+            "Properties": {
+                "Name": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Fn::GetAtt": [
+                                    "LoadBalancer",
+                                    "LoadBalancerName"
+                                ]
+                            },
+                            "tg"
+                        ]
+                    ]
+                },
+                "VpcId": {
+                    "Ref": "Vpc"
+                },
+                "Port": 80,
+                "Protocol": "HTTP",
+                "TargetType":"ip"
+            }
+        },
+        "LoadBalancer": {
+            "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+            "Properties": {
+                "Subnets": [
+                    {
+                        "Ref": "PublicSubnet1"
+                    },
+                    {
+                        "Ref": "PublicSubnet2"
+                    }
+                ],
+                "SecurityGroups": [
+                    {
+                        "Ref": "SecurityGroup"
+                    }
+                ]
+            }
+        },
+        "LoadBalancerListener": {
+            "Type": "AWS::ElasticLoadBalancingV2::Listener",
+            "Properties": {
+                "DefaultActions": [
+                    {
+                        "Type": "forward",
+                        "TargetGroupArn": {
+                            "Ref": "TargetGroup"
+                        }
+                    }
+                ],
+                "LoadBalancerArn": {
+                    "Ref": "LoadBalancer"
+                },
+                "Port": "80",
+                "Protocol": "HTTP"
+            }
+        },
+        "EcsCluster": {
+            "Type": "AWS::ECS::Cluster",
+            "Properties": {
+                "ClusterName": "ecs-cluster-helloapp"
+            }
+        },
+        "EcsService": {
+            "DependsOn": "LoadBalancerListener",
+            "Type": "AWS::ECS::Service",
+            "Properties": {
+                "Cluster": {
+                    "Ref": "EcsCluster"
+                },
+                "DeploymentConfiguration": {
+                    "MaximumPercent": "200",
+                    "MinimumHealthyPercent": "50"
+                },
+                "DesiredCount": 1,
+                "LaunchType": "FARGATE",
+                "LoadBalancers": [
+                    {
+                        "ContainerName": "helloapp",
+                        "ContainerPort": "80",
+                        "TargetGroupArn": {
+                            "Ref": "TargetGroup"
+                        }
+                    }
+                ],
+                "NetworkConfiguration": {
+                    "AwsvpcConfiguration": {
+                        "AssignPublicIp": "DISABLED",
+                        "SecurityGroups": [
+                            {
+                                "Ref": "SecurityGroup"
+                            }
+                        ],
+                        "Subnets": [
+                            {
+                                "Ref": "PrivateSubnet1"
+                            },
+                            {
+                                "Ref": "PrivateSubnet2"
+                            }
+                        ]
+                    }
+                },
+                "ServiceName": "ecs-service-helloapp",
+                "TaskDefinition": {
+                    "Ref": "EcsTaskDefinition"
+                }
+            }
+        },
+        "EcsLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+                "LogGroupName": "/aws/ecs/devops",
+                "RetentionInDays": "7"
+            }
+        },
+        "EcsTaskDefinition": {
+            "DependsOn": "EcsRole",
+            "Type": "AWS::ECS::TaskDefinition",
+            "Properties": {
+                "ContainerDefinitions": [
+                    {
+                        "PortMappings": [
+                            {
+                                "ContainerPort": 80
+                            }
+                        ],
+                        "LogConfiguration": {
+                            "LogDriver": "awslogs",
+                            "Options": {
+                                "awslogs-group": {
+                                    "Ref": "EcsLogGroup"
+                                },
+                                "awslogs-region": {
+                                    "Ref": "AWS::Region"
+                                },
+                                "awslogs-stream-prefix": "devops"
+                            }
+                        },
+                        "Name": "helloapp",
+                        "Image": {
+                            "Ref": "DockerImage"
+                        }
+                    }
+                ],
+                "Cpu": "256",
+                "ExecutionRoleArn": {
+                    "Fn::GetAtt": [
+                        "EcsRole",
+                        "Arn"
+                    ]
+                },
+                "Family": "devops",
+                "Memory": "512",
+                "NetworkMode": "awsvpc",
+                "RequiresCompatibilities": [
+                    "FARGATE"
+                ]
+            }
+        },
+        "EcsRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "ecs-tasks.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/AdministratorAccess"
+                ],
+                "Path": "/"
+            }
+        },
+        "EcsScalableTarget": {
+            "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+            "DependsOn": "EcsService",
+            "Properties": {
+                "ServiceNamespace": "ecs",
+                "ScalableDimension": "ecs:service:DesiredCount",
+                "ResourceId": {
+                    "Fn::Join": [
+                        "/",
+                        [
+                            "service",
+                            {
+                                "Ref": "EcsCluster"
+                            },
+                            {
+                                "Ref": "EcsService"
+                            }
+                        ]
+                    ]
+                },
+                "MinCapacity": 1,
+                "MaxCapacity": 10,
+                "RoleARN": {
+                    "Fn::GetAtt": [
+                        "EcsRole",
+                        "Arn"
+                    ]
+                }
+            }
+        },
+        "EcsScaleDownPolicy": {
+            "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+            "DependsOn": "EcsScalableTarget",
+            "Properties": {
+                "PolicyName": "EcsScaleDownPolicy",
+                "PolicyType": "StepScaling",
+                "ResourceId": {
+                    "Fn::Join": [
+                        "/",
+                        [
+                            "service",
+                            {
+                                "Ref": "EcsCluster"
+                            },
+                            {
+                                "Ref": "EcsService"
+                            }
+                        ]
+                    ]
+                },
+                "ScalableDimension": "ecs:service:DesiredCount",
+                "ServiceNamespace": "ecs",
+                "StepScalingPolicyConfiguration": {
+                    "AdjustmentType": "ChangeInCapacity",
+                    "StepAdjustments": [
+                        {
+                            "MetricIntervalUpperBound": 0,
+                            "ScalingAdjustment": -1
+                        }
+                    ],
+                    "MetricAggregationType": "Average",
+                    "Cooldown": 60
+                }
+            }
+        },
+        "EcsScaleUpPolicy": {
+            "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+            "DependsOn": "EcsScalableTarget",
+            "Properties": {
+                "PolicyName": "EcsScaleUpPolicy",
+                "PolicyType": "StepScaling",
+                "ResourceId": {
+                    "Fn::Join": [
+                        "/",
+                        [
+                            "service",
+                            {
+                                "Ref": "EcsCluster"
+                            },
+                            {
+                                "Ref": "EcsService"
+                            }
+                        ]
+                    ]
+                },
+                "ScalableDimension": "ecs:service:DesiredCount",
+                "ServiceNamespace": "ecs",
+                "StepScalingPolicyConfiguration": {
+                    "AdjustmentType": "ChangeInCapacity",
+                    "StepAdjustments": [
+                        {
+                            "MetricIntervalLowerBound": 0,
+                            "MetricIntervalUpperBound": 15,
+                            "ScalingAdjustment": 1
+                        },
+                        {
+                            "MetricIntervalLowerBound": 15,
+                            "MetricIntervalUpperBound": 25,
+                            "ScalingAdjustment": 2
+                        },
+                        {
+                            "MetricIntervalLowerBound": 25,
+                            "ScalingAdjustment": 3
+                        }
+                    ],
+                    "MetricAggregationType": "Average",
+                    "Cooldown": 60
+                }
+            }
+        },
+        "EcsLowCpuUsageAlarm": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmName": "EcsLowCpuUsageAlarm",
+                "AlarmDescription": "Ecs Low Cpu Usage Alarm",
+                "MetricName": "CPUUtilization",
+                "Namespace": "AWS/ECS",
+                "Dimensions": [
+                    {
+                        "Name": "ServiceName",
+                        "Value": {
+                            "Ref": "EcsService"
+                        }
+                    },
+                    {
+                        "Name": "ClusterName",
+                        "Value": {
+                            "Ref": "EcsCluster"
+                        }
+                    }
+                ],
+                "Statistic": "Average",
+                "Period": 60,
+                "EvaluationPeriods": 1,
+                "Threshold": 10,
+                "ComparisonOperator": "LessThanOrEqualToThreshold",
+                "AlarmActions": [
+                    {
+                        "Ref": "EcsScaleDownPolicy"
+                    }
+                ]
+            }
+        },
+        "EcsHighCpuUsageAlarm": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmName": "EcsHighCpuUsageAlarm",
+                "AlarmDescription": "Ecs High Cpu Usage Alarm",
+                "MetricName": "CPUUtilization",
+                "Namespace": "AWS/ECS",
+                "Dimensions": [
+                    {
+                        "Name": "ServiceName",
+                        "Value": {
+                            "Ref": "EcsService"
+                        }
+                    },
+                    {
+                        "Name": "ClusterName",
+                        "Value": {
+                            "Ref": "EcsCluster"
+                        }
+                    }
+                ],
+                "Statistic": "Average",
+                "Period": 60,
+                "EvaluationPeriods": 1,
+                "Threshold": 20,
+                "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+                "AlarmActions": [
+                    {
+                        "Ref": "EcsScaleUpPolicy"
+                    }
+                ]
+            }
+        }
+    }
+}
