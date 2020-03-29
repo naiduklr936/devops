@@ -895,7 +895,7 @@
                         "Name": "busybox",
                         "Cpu": 10,
                         "Command": [
-                            "/bin/sh -c \"while true; do echo '<html> <head> <title>Hello World</title> <style>body {margin-top: 40px; background-color: #333;} </style> </head><body> <div style=color:white;text-align:center> <h1>Hello World!</h1>' > top; echo '</div></body></html>' > bottom; > /usr/local/apache2/htdocs/index.html ; sleep 1; done\""
+                            "/bin/sh -c \"while true; do echo '<html><h1>Hello World!</h1></html>' > bottom; > /usr/local/apache2/htdocs/index.html ; sleep 1; done\""
                         ],
                         "EntryPoint": [
                             "sh",
