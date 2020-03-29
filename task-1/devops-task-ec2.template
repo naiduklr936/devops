@@ -943,10 +943,10 @@
                 ],
                 "Subnets": [
                     {
-                        "Ref": "PrivateSubnet1"
+                        "Ref": "PublicSubnet1"
                     },
                     {
-                        "Ref": "PrivateSubnet2"
+                        "Ref": "PublicSubnet2"
                     }
                 ],
                 "SecurityGroups": [
@@ -1024,10 +1024,10 @@
             "Properties": {
                 "VPCZoneIdentifier": [
                     {
-                        "Ref": "PublicSubnet1"
+                        "Ref": "PrivateSubnet1"
                     },
                     {
-                        "Ref": "PublicSubnet2"
+                        "Ref": "PrivateSubnet2"
                     }
                 ],
                 "LaunchConfigurationName": {
