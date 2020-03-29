@@ -34,14 +34,6 @@
                 },
                 {
                     "Label": {
-                        "default": "Docker Image Info"
-                    },
-                    "Parameters": [
-                        "DockerImage"
-                    ]
-                },
-                {
-                    "Label": {
                         "default": "Ec2 Info"
                     },
                     "Parameters": [
@@ -113,11 +105,6 @@
             "Description": "Name of Vpc",
             "Type": "String",
             "Default": "devops"
-        },
-        "DockerImage": {
-            "Description": "Docker Image",
-            "Type": "String",
-            "Default": "229349022034.dkr.ecr.us-east-1.amazonaws.com/helloapp:ecr-helloapp"
         },
         "VpcCidr": {
             "ConstraintDescription": "Must be a valid IP CIDR range of the form x.x.x.x/x.",

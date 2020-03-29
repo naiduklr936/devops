@@ -809,7 +809,7 @@
                 },
                 "Port": 80,
                 "Protocol": "HTTP",
-                "TargetType":"ip"
+                "TargetType": "ip"
             }
         },
         "LoadBalancer": {
